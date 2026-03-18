@@ -1,4 +1,6 @@
 # TP0: Docker + Comunicaciones + Concurrencia
+- Alumno: Ignacio Ezequiel Vetrano
+- Padrón: 106129
 
 En el presente repositorio se provee un esqueleto básico de cliente/servidor, en donde todas las dependencias del mismo se encuentran encapsuladas en containers. Los alumnos deberán resolver una guía de ejercicios incrementales, teniendo en cuenta las condiciones de entrega descritas al final de este enunciado.
 
@@ -179,3 +181,12 @@ Se proveen [pruebas automáticas](https://github.com/7574-sistemas-distribuidos/
 
 El incumplimiento de las pruebas es condición de desaprobación, pero su cumplimiento no es suficiente para la aprobación.  Se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección informados  [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
 Respetar el formato y contenido las entradas de logs descritas en los ejercicios, pues son las que se chequean en cada uno de los tests.
+
+## Resoluciones
+### Parte 1
+#### Ejercicio N°1
+Se implementó un script de bash `generar-compose.sh` que, como pide el ejercicio, recibe el nombre del archivo de salida y la cantidad de clientes esperados, e invoca un subscript de Python `mi-generador.py` que genera un archivo Docker Compose similar al inicial del repositorio, pero con la cantidad de clientes que se pide.
+- Para ejecutarlo:  
+`./generar-compose.sh <nombre_salida> <cantidad_clientes>`
+- Ejemplo:  
+`./generar-compose.sh docker-compose-dev.yaml 5`
