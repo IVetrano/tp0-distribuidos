@@ -6,6 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"os/signal"
+	"syscall"
+
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -110,6 +113,10 @@ func main() {
 		LoopPeriod:    v.GetDuration("loop.period"),
 	}
 
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, syscall.SIGTERM)
+	defer signal.Stop(signalChannel)
+
 	client := common.NewClient(clientConfig)
-	client.StartClientLoop()
+	client.StartClientLoop(signalChannel)
 }
