@@ -15,10 +15,11 @@ class Server:
         self._running = False
 
         logging.info("action: shutdown | state: closing_server_socket | result: in_progress")
-        try:
-            self._server_socket.close()
-        except OSError as e:
-            logging.error(f"action: shutdown | state: closing_server_socket | result: fail | error: {e}")
+        if self._server_socket:
+            try:
+                self._server_socket.close()
+            except OSError as e:
+                logging.error(f"action: shutdown | state: closing_server_socket | result: fail | error: {e}")
         logging.info("action: shutdown | state: closing_server_socket | result: success")
 
         logging.info("action: shutdown | state: closing_client_sockets | result: in_progress")
