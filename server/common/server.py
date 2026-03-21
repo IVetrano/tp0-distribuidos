@@ -18,15 +18,16 @@ class Server:
         if self._server_socket:
             try:
                 self._server_socket.close()
+                logging.info("action: shutdown | result: success | state: closing_server_socket")
             except OSError as e:
-                logging.error(f"action: shutdown | state: closing_server_socket | result: fail | error: {e}")
+                logging.error(f"action: shutdown | result: fail | state: closing_server_socket | error: {e}")
 
         for client in self._clients.copy():
             try:
                 client.close()
             except OSError as e:
-                logging.error(f"action: shutdown | state: closing_client_sockets | result: fail | error: {e}")
-        logging.info("action: shutdown | state: closing_client_sockets | result: success")
+                logging.error(f"action: shutdown | result: fail | state: closing_client_sockets | error: {e}")
+        logging.info("action: shutdown | result: success | state: closing_client_sockets")
 
     def run(self):
         """
