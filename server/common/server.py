@@ -14,15 +14,13 @@ class Server:
     def shutdown(self):
         self._running = False
 
-        logging.info("action: shutdown | state: closing_server_socket | result: in_progress")
+        logging.info("action: shutdown | result: in_progress")
         if self._server_socket:
             try:
                 self._server_socket.close()
             except OSError as e:
                 logging.error(f"action: shutdown | state: closing_server_socket | result: fail | error: {e}")
-        logging.info("action: shutdown | state: closing_server_socket | result: success")
 
-        logging.info("action: shutdown | state: closing_client_sockets | result: in_progress")
         for client in self._clients.copy():
             try:
                 client.close()
@@ -47,7 +45,7 @@ class Server:
             except OSError as e:
                 if not self._running:
                     break
-                logging.error(f"action: accept_connections | result: fail | error: {e}")
+                logging.error(f"action: accept_connections | error: {e}")
 
     def __handle_client_connection(self, client_sock):
         """
