@@ -41,7 +41,9 @@ class Server:
         while self._running:
             try:
                 client_sock = self.__accept_new_connection()
-                self.__handle_client_connection(client_sock)
+                if client_sock:
+                    self._clients.add(client_sock)
+                    self.__handle_client_connection(client_sock)
             except OSError as e:
                 if not self._running:
                     break
@@ -78,6 +80,5 @@ class Server:
         # Connection arrived
         logging.info('action: accept_connections | result: in_progress')
         c, addr = self._server_socket.accept()
-        self._clients.add(c)
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
