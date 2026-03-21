@@ -9,12 +9,25 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._running = True
+        self._clients = set()
 
     def shutdown(self):
-        logging.info("action: shutdown | result: in_progress")
-        self._server_socket.close()
         self._running = False
-        logging.info("action: shutdown | result: success")
+
+        logging.info("action: shutdown | state: closing_server_socket | result: in_progress")
+        try:
+            self._server_socket.close()
+        except OSError as e:
+            logging.error(f"action: shutdown | state: closing_server_socket | result: fail | error: {e}")
+        logging.info("action: shutdown | state: closing_server_socket | result: success")
+
+        logging.info("action: shutdown | state: closing_client_sockets | result: in_progress")
+        for client in self._clients:
+            try:
+                client.close()
+            except OSError as e:
+                logging.error(f"action: shutdown | state: closing_client_sockets | result: fail | error: {e}")
+        logging.info("action: shutdown | state: closing_client_sockets | result: success")
 
     def run(self):
         """
@@ -50,6 +63,7 @@ class Server:
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
+            self._clients.discard(client_sock)
             client_sock.close()
 
     def __accept_new_connection(self):
@@ -63,5 +77,6 @@ class Server:
         # Connection arrived
         logging.info('action: accept_connections | result: in_progress')
         c, addr = self._server_socket.accept()
+        self._clients.add(c)
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
