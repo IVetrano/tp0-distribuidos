@@ -179,3 +179,27 @@ Se proveen [pruebas automáticas](https://github.com/7574-sistemas-distribuidos/
 
 El incumplimiento de las pruebas es condición de desaprobación, pero su cumplimiento no es suficiente para la aprobación.  Se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección informados  [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
 Respetar el formato y contenido las entradas de logs descritas en los ejercicios, pues son las que se chequean en cada uno de los tests.
+
+## Resoluciones
+### Parte 1
+#### Ejercicio N°1
+Se implementó un script de bash `generar-compose.sh` que, como pide el ejercicio, recibe el nombre del archivo de salida y la cantidad de clientes esperados, e invoca un subscript de Python `mi-generador.py` que genera un archivo Docker Compose similar al inicial del repositorio, pero con la cantidad de clientes que se pide.
+- Para ejecutarlo:  
+`./generar-compose.sh <nombre_salida> <cantidad_clientes>`
+- Ejemplo:  
+`./generar-compose.sh docker-compose-dev.yaml 5`
+
+#### Ejercicio N°2
+Se resolvió el ejercicio mediante el uso de volúmenes en Docker Compose, montando los archivos de configuración del cliente y servidor (`config.ini` para el servidor y `config.yaml` para el cliente) dentro de sus respectivos contenedores. Esto permite modificar la configuración sin necesidad de reconstruir las imágenes. Luego se quitaron las variables de entorno para que no reemplacen lo establecido en los archivos de configuración.
+
+#### Ejercicio N°3
+Para verificar el correcto funcionamiento del server, se implementó un script que envia un mensaje de prueba y verifica la respuesta.  
+Para esto, primero se ejecuta un contenedor temporal utilizando `docker run`, conectado a la red `tp0_testing_net`, desde el cual se envia el mensaje `"test"` al servidor mediante `netcat`. La respusta del servidor es comparada con el mensaje original, si ambos coinciden se considera que el server funciona correctamente y se imprime el resultado exitoso, en caso contrario se informa un fallo.  
+* Para ejecutarlo:  
+`./validar-echo-server.sh`
+
+#### Ejercicio N°4
+Se agregó manejo de la señal `SIGTERM` tanto en el servidor como en el cliente para que ambos finalicen de forma graceful.  
+En el servidor se registro en el `main.py` un handler de `SIGTERM` que invoca un metodo `shutdown` del objeto `Server`. Se decidió resolverlo de forma `no polite`, por lo que este método primero marca al servidor como detenido para que se salga del loop de aceptar nuevas conexiones, luego cierra el socket del server, y luego cierra los sockets de cada uno de los clientes, de esta manera, aunque un cliente este en mitad de la operación, se le cerrará la conexión para que el servidor pueda finalizar.  
+En el cliente se creó un canal de señales y se configuró signal.Notify para recibir `SIGTERM`. Ese canal se pasa al objeto `Client` en el método `StartClientLoop`, donde, en cada iteración, se consulta si llegó la señal por el canal, si llegó la señal se sale del loop; En caso de que no haya llegado se mantiene el comportamiento normal (conexión al servidor, envío del mensaje, recepción de respuesta y cierre del socket).  
+De esta forma, al hacer `docker compose down -t <tiempo>` donde `<tiempo>` son los segundos que espera docker despues de mandar `SIGTERM` antes de mandar `SIGKILL`, ambos procesos cierran sus recursos y sockets de manera ordenada antes de finalizar.
