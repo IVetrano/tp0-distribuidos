@@ -22,7 +22,7 @@ class Server:
         logging.info("action: shutdown | state: closing_server_socket | result: success")
 
         logging.info("action: shutdown | state: closing_client_sockets | result: in_progress")
-        for client in self._clients:
+        for client in self._clients.copy():
             try:
                 client.close()
             except OSError as e:
@@ -63,8 +63,8 @@ class Server:
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
-            self._clients.discard(client_sock)
             client_sock.close()
+            self._clients.discard(client_sock)
 
     def __accept_new_connection(self):
         """
