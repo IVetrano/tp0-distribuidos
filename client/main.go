@@ -117,6 +117,14 @@ func main() {
 	signal.Notify(signalChannel, syscall.SIGTERM)
 	defer signal.Stop(signalChannel)
 
+	id := clientConfig.ID
+	bet, err := common.NewBetFromEnv(id)
+	if err != nil {
+		log.Errorf("action: parse_bet | result: fail | client_id: %s | error: %v", id, err)
+		return
+	}
+	log.Infof("action: parse_bet | result: success | client_id: %s | bet: %+v", id, bet)
+
 	client := common.NewClient(clientConfig)
-	client.StartClientLoop(signalChannel)
+	client.StartClientLoop(signalChannel, bet)
 }
