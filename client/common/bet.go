@@ -16,7 +16,7 @@ type Bet struct {
 	Number int
 }
 
-func newBetFromEnv(agencyID string) (*Bet, error) {
+func NewBetFromEnv(agencyID string) (*Bet, error) {
 	firstName := os.Getenv("NOMBRE")
 	lastName := os.Getenv("APELLIDO")
 	document := os.Getenv("DOCUMENTO")

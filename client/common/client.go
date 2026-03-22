@@ -66,7 +66,7 @@ func (c *Client) StartClientLoop(signalChannel chan os.Signal, bet *Bet) {
 			return
 		}
 
-		log.infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", bet.Document, bet.Number)
+		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", bet.Document, bet.Number)
 
 		// Close the connection
 		err = protocol.Close()
