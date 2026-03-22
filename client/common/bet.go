@@ -29,7 +29,7 @@ func NewBetFromEnv(agencyID string) (*Bet, error) {
 		return nil, fmt.Errorf("error parsing agency ID: %v", err)
 	}
 
-	birthDate, err := time.Parse("2006-01-02", os.Getenv("NACIMIENTO"))}
+	birthDate, err := time.Parse("2006-01-02", os.Getenv("NACIMIENTO"))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing birth date: %v", err)
 	}
@@ -47,3 +47,4 @@ func NewBetFromEnv(agencyID string) (*Bet, error) {
 		BirthDate: birthDate,
 		Number: number,
 	}, nil
+}
