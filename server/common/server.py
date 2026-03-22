@@ -1,5 +1,6 @@
 import socket
 import logging
+from .client import Client
 
 
 class Server:
@@ -23,11 +24,9 @@ class Server:
                 logging.error(f"action: shutdown | result: fail | state: closing_server_socket | error: {e}")
 
         for client in self._clients.copy():
-            try:
-                client.close()
-            except OSError as e:
-                logging.error(f"action: shutdown | result: fail | state: closing_client_sockets | error: {e}")
-        logging.info("action: shutdown | result: success | state: closing_client_sockets")
+            client.close_connection()
+        
+        logging.info("action: shutdown | result: success")
 
     def run(self):
         """
@@ -41,32 +40,23 @@ class Server:
             try:
                 client_sock = self.__accept_new_connection()
                 if client_sock:
-                    self._clients.add(client_sock)
-                    self.__handle_client_connection(client_sock)
+                    client = Client(client_sock)
+                    self._clients.add(client)
+                    self.__handle_client_connection(client)
             except OSError as e:
                 if not self._running:
                     break
                 logging.error(f"action: accept_connections | error: {e}")
 
-    def __handle_client_connection(self, client_sock):
+    def __handle_client_connection(self, client):
         """
         Read message from a specific client socket and closes the socket
 
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
-        try:
-            # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
-            addr = client_sock.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-            # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
-        except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
-        finally:
-            client_sock.close()
-            self._clients.discard(client_sock)
+        client.handle_connection()
+        self._clients.discard(client)
 
     def __accept_new_connection(self):
         """
