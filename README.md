@@ -1,4 +1,6 @@
 # TP0: Docker + Comunicaciones + Concurrencia
+- Alumno: Ignacio Ezequiel Vetrano
+- Padrón: 106129
 
 En el presente repositorio se provee un esqueleto básico de cliente/servidor, en donde todas las dependencias del mismo se encuentran encapsuladas en containers. Los alumnos deberán resolver una guía de ejercicios incrementales, teniendo en cuenta las condiciones de entrega descritas al final de este enunciado.
 
