@@ -144,7 +144,7 @@ func (p *Protocol) receiveAck() (byte, error) {
 }
 
 func (p *Protocol) sendAndWaitAck(data []byte) error {
-	err = p.sendAll(data)
+	err := p.sendAll(data)
 	if err != nil {
 		return fmt.Errorf("error sending data: %v", err)
 	}
@@ -164,6 +164,7 @@ func (p *Protocol) sendAndWaitAck(data []byte) error {
 	default:
 		return fmt.Errorf("unknown ack value: %v", ack)
 	}
+}
 
 func (p *Protocol) serializeBetBatch(bets []*Bet) ([]byte, error) {
 	buf := new(bytes.Buffer)
