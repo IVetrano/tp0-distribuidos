@@ -28,6 +28,7 @@ def build_compose(n_clients):
             "    entrypoint: /client",
             "    environment:",
             f"      - CLI_ID={i}",
+            f"      - CSV_FILEPATH=/.data/agency-{i}.csv",
             "    networks:",
             "      - testing_net",
             "    depends_on:",
