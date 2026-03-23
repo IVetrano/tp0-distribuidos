@@ -1,4 +1,6 @@
 # TP0: Docker + Comunicaciones + Concurrencia
+- Alumno: Ignacio Ezequiel Vetrano
+- Padrón: 106129
 
 En el presente repositorio se provee un esqueleto básico de cliente/servidor, en donde todas las dependencias del mismo se encuentran encapsuladas en containers. Los alumnos deberán resolver una guía de ejercicios incrementales, teniendo en cuenta las condiciones de entrega descritas al final de este enunciado.
 
@@ -203,3 +205,31 @@ Se agregó manejo de la señal `SIGTERM` tanto en el servidor como en el cliente
 En el servidor se registro en el `main.py` un handler de `SIGTERM` que invoca un metodo `shutdown` del objeto `Server`. Se decidió resolverlo de forma `no polite`, por lo que este método primero marca al servidor como detenido para que se salga del loop de aceptar nuevas conexiones, luego cierra el socket del server, y luego cierra los sockets de cada uno de los clientes, de esta manera, aunque un cliente este en mitad de la operación, se le cerrará la conexión para que el servidor pueda finalizar.  
 En el cliente se creó un canal de señales y se configuró signal.Notify para recibir `SIGTERM`. Ese canal se pasa al objeto `Client` en el método `StartClientLoop`, donde, en cada iteración, se consulta si llegó la señal por el canal, si llegó la señal se sale del loop; En caso de que no haya llegado se mantiene el comportamiento normal (conexión al servidor, envío del mensaje, recepción de respuesta y cierre del socket).  
 De esta forma, al hacer `docker compose down -t <tiempo>` donde `<tiempo>` son los segundos que espera docker despues de mandar `SIGTERM` antes de mandar `SIGKILL`, ambos procesos cierran sus recursos y sockets de manera ordenada antes de finalizar.
+
+### Parte 2
+#### Ejercicio N°5
+Para resolver el ejercicio se definió un protocolo binario para la comunicación.  
+El cliente construye una apuesta (`Bet`) leyendo las variables de entorno (`NOMBRE`, `APELLIDO`, `DOCUMENTO`, `NACIMIENTO` (en formato YYYY-MM-DD) y `NUMERO`). Esta apuesta se envia al servidor mediante un módulo de comunicación `Protocol` que abstrae del cliente la serializacion de la apuesta al formato del protocolo definido y de la conexión del servidor. Éste serializa la apuesta en binario con el siguiente formato, siempre en Big Endian:
+```
+agency: 2 bytes (uint16)
+first_name: 20 bytes (string padded con '\0')
+last_name: 20 bytes (string padded con '\0')
+document: 12 bytes (string padded con '\0')
+birthdate: 4 bytes (year como uint16, month y day como uint8)
+number: 4 bytes (uint32)
+```
+Dando un tamaño total de `62 bytes`.  
+`Protocol` se encarga de manejar short writes/reads con funciones que envian y reciben hasta completar `N` bytes. Luego de enviar la apuesta, espera un ACK de `1 byte` desde el servidor, que estan definidos por:
+```
+0: OK
+1: BAD_REQUEST
+2: SERVER_ERROR
+```
+Si el ACK es exitoso, loguea:  
+`action: apuesta_enviada | result: success | dni: ${DOCUMENTO} | numero: ${NUMERO}`  
+
+Del lado del servidor, se encapsuló la des-serialización y la comunicación en una clase `Protocol` análoga a la del cliente, y se implementó una clase `Client` para gestionar a cada cliente. `Protocol` recibe exactamente el tamaño fijo de la apuesta (`62 bytes`), luego des-serializa los campos en el mismo orden y tamaño que el cliente. Con estos datos se construye un objeto `Bet` del lado del servidor y se persiste con la funcón provista `store_bets(...)`.  
+Si la apuesta se almacena correctamente, el servidor envía un ACK `OK` al cliente y loguea:  
+`action: apuesta_almacenada | result: success | dni: ${DOCUMENTO} | numero: ${NUMERO}`  
+
+Ante errores de datos (por ejemplo, formato incorrecto) el servidor responde con un ACK `BAD_REQUEST` y ante errores internos con un ACK `SERVER_ERROR`.
