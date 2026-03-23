@@ -45,14 +45,3 @@ func NewBetFromStrings(agencyID, firstName, lastName, document, birthDateStr, nu
         Number:    number,
     }, nil
 }
-
-func NewBetFromEnv(agencyID string) (*Bet, error) {
-    return NewBetFromStrings(
-        agencyID,
-        os.Getenv("NOMBRE"),
-        os.Getenv("APELLIDO"),
-        os.Getenv("DOCUMENTO"),
-        os.Getenv("NACIMIENTO"),
-        os.Getenv("NUMERO"),
-    )
-}

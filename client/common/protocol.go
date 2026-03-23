@@ -143,15 +143,10 @@ func (p *Protocol) receiveAck() (byte, error) {
 	return ack[0], nil
 }
 
-func (p *Protocol) SendBet(bet *Bet) error {
-	serializedBet, err := p.serializeBet(bet)
+func (p *Protocol) sendAndWaitAck(data []byte) error {
+	err = p.sendAll(data)
 	if err != nil {
-		return err
-	}
-	
-	err = p.sendAll(serializedBet)
-	if err != nil {
-		return fmt.Errorf("error sending bet: %v", err)
+		return fmt.Errorf("error sending data: %v", err)
 	}
 
 	ack, err := p.receiveAck()
@@ -170,6 +165,35 @@ func (p *Protocol) SendBet(bet *Bet) error {
 		return fmt.Errorf("unknown ack value: %v", ack)
 	}
 
+func (p *Protocol) serializeBetBatch(bets []*Bet) ([]byte, error) {
+	buf := new(bytes.Buffer)
+
+	// N (4 bytes)
+	err := binary.Write(buf, binary.BigEndian, uint32(len(bets)))
+	if err != nil {
+		return nil, fmt.Errorf("error serializing bet count: %v", err)
+	}
+
+	for _, bet := range bets {
+		serializedBet, err := p.serializeBet(bet)
+		if err != nil {
+			return nil, fmt.Errorf("error serializing bet: %v", err)
+		}
+		_, err = buf.Write(serializedBet)
+		if err != nil {
+			return nil, fmt.Errorf("error serializing bet data: %v", err)
+		}
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (p *Protocol) SendBetBatch(bets []*Bet) error {
+	serializedBatch, err := p.serializeBetBatch(bets)
+	if err != nil {
+		return err
+	}
+	return p.sendAndWaitAck(serializedBatch)
 }
 
 func (p *Protocol) Close() error {
