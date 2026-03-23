@@ -117,6 +117,7 @@ func main() {
 	signal.Notify(signalChannel, syscall.SIGTERM)
 	defer signal.Stop(signalChannel)
 
+	log.Infof("action: parse_bet | result: in_progress | client_id: %s", clientConfig.ID)
 	id := clientConfig.ID
 	bet, err := common.NewBetFromEnv(id)
 	if err != nil {
