@@ -111,21 +111,15 @@ func main() {
 		ID:            v.GetString("id"),
 		LoopAmount:    v.GetInt("loop.amount"),
 		LoopPeriod:    v.GetDuration("loop.period"),
+		CsvFilePath:   os.Getenv("CSV_FILEPATH"),
+		MaxBatchAmount: v.GetInt("batch.maxAmount"),
+
 	}
 
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, syscall.SIGTERM)
 	defer signal.Stop(signalChannel)
 
-	log.Infof("action: parse_bet | result: in_progress | client_id: %s", clientConfig.ID)
-	id := clientConfig.ID
-	bet, err := common.NewBetFromEnv(id)
-	if err != nil {
-		log.Errorf("action: parse_bet | result: fail | client_id: %s | error: %v", id, err)
-		return
-	}
-	log.Infof("action: parse_bet | result: success | client_id: %s | bet: %+v", id, bet)
-
 	client := common.NewClient(clientConfig)
-	client.StartClientLoop(signalChannel, bet)
+	client.StartClientLoop(signalChannel)
 }

@@ -14,6 +14,8 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
+	CsvFilePath   string
+	MaxBatchAmount int
 }
 
 // Client Entity that encapsulates how
@@ -32,47 +34,63 @@ func NewClient(config ClientConfig) *Client {
 
 
 
-// StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client) StartClientLoop(signalChannel chan os.Signal, bet *Bet) {
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
-	running := true
+func (c *Client) StartClientLoop(signalChannel chan os.Signal) {
+	// Create the connection the server in every loop iteration.
+	protocol, err := NewProtocol(c.config.ServerAddress)
+	if err != nil {
+		log.Criticalf("action: connect | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		return
+	}
 
-	for msgID := 1; msgID <= c.config.LoopAmount && running; msgID++ {
+	// Create the CSV iterator for the current client
+	csvIterator, err := NewCSVBetIterator(c.config.CsvFilePath, c.config.ID)
+	if err != nil {
+		log.Criticalf("action: create_csv_iterator | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		return
+	}
+	
+	// Send Bets
+	for !csvIterator.Done() {
 		// Check if a SIGTERM signal has been received. If so, break the loop
 		select {
         case <-signalChannel:
             log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
-            running = false
-            continue
+            break
         default:
         }
 
-		// Create the connection the server in every loop iteration.
-		protocol, err := NewProtocol(c.config.ServerAddress)
+		bets, err := csvIterator.NextBatch(c.config.MaxBatchAmount)
 		if err != nil {
-			log.Criticalf("action: connect | result: fail | client_id: %v | error: %v", c.config.ID, err)
-			return
-		}
-		
-		// Send the Bet
-		err = protocol.SendBet(bet)
-		if err != nil {
-			log.Errorf("action: send_bet | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			log.Errorf("action: read_csv_batch | result: fail | client_id: %v | error: %v", c.config.ID, err)
 			return
 		}
 
-		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", bet.Document, bet.Number)
+		if bets == nil {
+			break
+		}
 
-		// Close the connection
-		err = protocol.Close()
+		err = protocol.SendBetBatch(bets)
 		if err != nil {
-			log.Errorf("action: close_connection | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			log.Errorf("action: send_bets | result: fail | client_id: %v | error: %v", c.config.ID, err)
 			return
 		}
 	}
 
-	if running {
-		log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+	log.Infof("action: send_bets | result: success")
+
+	// Close the CSV file
+	err = csvIterator.Close()
+	if err != nil {
+		log.Errorf("action: close_csv_iterator | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		return
 	}
+
+	// Close the connection
+	err = protocol.Close()
+	if err != nil {
+		log.Errorf("action: close_connection | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		return
+	}
+
+	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
