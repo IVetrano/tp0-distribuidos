@@ -27,6 +27,8 @@ def build_compose(n_clients):
             "    entrypoint: /client",
             "    environment:",
             f"      - CLI_ID={i}",
+            "    env_file:",
+            f"      - .env.client1",
             "    networks:",
             "      - testing_net",
             "    depends_on:",

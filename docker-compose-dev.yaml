@@ -17,6 +17,8 @@ services:
     entrypoint: /client
     environment:
       - CLI_ID=1
+    env_file:
+      - .env.client1
     volumes:
       - ./client/config.yaml:/config.yaml
     networks:
