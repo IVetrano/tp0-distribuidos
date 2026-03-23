@@ -21,6 +21,7 @@ services:
       - .env.client1
     volumes:
       - ./client/config.yaml:/config.yaml
+      - ./.data/agency-1.csv:/.data/agency-1.csv
     networks:
       - testing_net
     depends_on:
