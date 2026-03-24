@@ -249,13 +249,19 @@ func (p *Protocol) getWinners() ([]string, error) {
     return winners, nil
 }
 
-func (p *Protocol) QueryWinners() (ready bool, winners []string, err error) {
+func (p *Protocol) QueryWinners(agencyID int) (ready bool, winners []string, err error) {
 	buf := new(bytes.Buffer)
 
 	// Type (1 byte)
 	err := binary.Write(buf, binary.BigEndian, TypeQuery)
 	if err != nil {
 		return false, nil, fmt.Errorf("error serializing query message: %v", err)
+	}
+
+	// Agency ID (2 bytes)
+	err = binary.Write(buf, binary.BigEndian, uint16(agencyID))
+	if err != nil {
+		return false, nil, fmt.Errorf("error serializing agency ID: %v", err)
 	}
 
 	// Send query
