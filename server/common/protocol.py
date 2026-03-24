@@ -1,6 +1,8 @@
 import socket
 from .utils import Bet
 
+AMOUNT_SIZE = 4
+
 AGENCY_SIZE = 2
 FIRST_NAME_SIZE = 20
 LAST_NAME_SIZE = 20
@@ -81,6 +83,17 @@ class Protocol:
     def receive_bet(self):
         data = self._receive_n_bytes(BET_SIZE)
         return self.deserialize_bet(data)
+    
+    def receive_amount(self):
+        amount_data = self._receive_n_bytes(AMOUNT_SIZE)
+        return int.from_bytes(amount_data, byteorder='big')
+
+    def receive_n_bets(self, n):
+        bets = []
+        for _ in range(n):
+            bet = self.receive_bet()
+            bets.append(bet)
+        return bets
 
     def send_ack(self, ack_code):
         self._send_all(bytes([ack_code]))

@@ -169,7 +169,7 @@ func (p *Protocol) sendAndWaitAck(data []byte) error {
 func (p *Protocol) serializeBetBatch(bets []*Bet) ([]byte, error) {
 	buf := new(bytes.Buffer)
 
-	// N (4 bytes)
+	// Amount (4 bytes)
 	err := binary.Write(buf, binary.BigEndian, uint32(len(bets)))
 	if err != nil {
 		return nil, fmt.Errorf("error serializing bet count: %v", err)

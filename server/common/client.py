@@ -8,18 +8,16 @@ class Client:
 
     def handle_connection(self):
         try:
-            bet = self._proto.receive_bet()
-            store_bets([bet])
-            logging.info(
-                "action: apuesta_almacenada | result: success | dni: %s | numero: %s",
-                bet.document,
-                bet.number,
-            )
+            amount = self._proto.receive_amount()
+            bets = self._proto.receive_n_bets(amount)
+            store_bets(bets)
+            
+            logging.info(f"apuesta_recibida | result: success | cantidad: {amount}")
 
             self._proto.send_ack(ACK_OK)
-        
+
         except ValueError as e:
-            logging.error(f"action: receive_message | result: fail | type: bad_request | error: {e}")
+            logging.error(f"action: apuesta_recibida | result: fail | cantidad: {amount}")
             try:
                 self._proto.send_ack(ACK_BAD_REQUEST)
             except ProtocolError as e:
