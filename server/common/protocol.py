@@ -16,6 +16,15 @@ ACK_OK = 0
 ACK_BAD_REQUEST = 1
 ACK_INTERNAL_ERROR = 2
 
+TYPE_SIZE = 1
+
+TYPE_BET_BATCH = 0
+TYPE_FINISH = 1
+TYPE_QUERY = 2
+
+WINNERS_NOT_READY = 0
+WINNERS_READY = 1
+
 class ProtocolError(Exception):
     pass
 
@@ -97,6 +106,33 @@ class Protocol:
 
     def send_ack(self, ack_code):
         self._send_all(bytes([ack_code]))
+
+    def receive_type(self):
+        type_data = self._receive_n_bytes(TYPE_SIZE)
+        return type_data[0]
+
+    def receive_agency_id(self):
+        agency_id_data = self._receive_n_bytes(AGENCY_SIZE)
+        return int.from_bytes(agency_id_data, byteorder='big')
+
+    def send_winners_not_ready(self):
+        self._send_all(bytes([WINNERS_NOT_READY]))
+
+    def send_winners(self, winners):
+        data = bytearray()
+
+        # Winners ready
+        data.append(WINNERS_READY)
+
+        # Number of winners
+        count = len(winners)
+        data.extend(count.to_bytes(AMOUNT_SIZE, byteorder='big'))
+
+        # Winners DNIs
+        for winner in winners:
+            data.extend(winner.encode('utf-8').ljust(DOCUMENT_SIZE, b'\x00'))
+        
+        self._send_all(bytes(data))
 
     def close(self):
         try:

@@ -38,6 +38,7 @@ def initialize_config():
 def main():
     config_params = initialize_config()
     logging_level = config_params["logging_level"]
+    expected_agencies = int(os.getenv("EXPECTED_AGENCIES", "5"))
     port = config_params["port"]
     listen_backlog = config_params["listen_backlog"]
 
@@ -49,7 +50,7 @@ def main():
                   f"listen_backlog: {listen_backlog} | logging_level: {logging_level}")
 
     # Initialize server and start server loop
-    server = Server(port, listen_backlog)
+    server = Server(port, listen_backlog, expected_agencies)
 
     # SIGTERM handler shuts down the server gracefully
     def sigterm_handler(signum, frame):

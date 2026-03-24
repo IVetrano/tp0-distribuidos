@@ -3,6 +3,7 @@ package common
 import (
 	"time"
 	"os"
+	"strconv"
 	"github.com/op/go-logging"
 )
 
@@ -62,11 +63,29 @@ func (c *Client) sendBets(signalChannel chan os.Signal, protocol *Protocol, csvI
 	return nil
 }
 
-func (c *Client) getWinners(protocol *Protocol) ([]string, error) {
+func (c *Client) getWinners() ([]string, error) {
 	for {
-		ready, winners, err := protocol.QueryWinners()
+		protocol, err := NewProtocol(c.config.ServerAddress)
+		if err != nil {
+			log.Errorf("action: connect_query | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			return nil, err
+		}
+		
+		agencyID, err := strconv.Atoi(c.config.ID)
+		if err != nil {
+			log.Errorf("action: parse_agency_id | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			return nil, err
+		}
+
+		ready, winners, err := protocol.QueryWinners(agencyID)
 		if err != nil {
 			log.Errorf("action: query_winners | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			return nil, err
+		}
+
+		err = protocol.Close()
+		if err != nil {
+			log.Errorf("action: close_connection_query | result: fail | client_id: %v | error: %v", c.config.ID, err)
 			return nil, err
 		}
 
@@ -115,19 +134,19 @@ func (c *Client) StartClientLoop(signalChannel chan os.Signal) {
 	}
 	log.Infof("action: send_finish | result: success")
 
-	// Get winners
-	winners, err := c.getWinners(protocol)
-	if err != nil {
-		return
-	}
-	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", len(winners))
-
 	// Close the connection
 	err = protocol.Close()
 	if err != nil {
 		log.Errorf("action: close_connection | result: fail | client_id: %v | error: %v", c.config.ID, err)
 		return
 	}
+
+	// Get winners
+	winners, err := c.getWinners()
+	if err != nil {
+		return
+	}
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", len(winners))
 
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }

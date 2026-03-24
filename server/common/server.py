@@ -3,14 +3,28 @@ import logging
 from .client import Client
 
 
+class LotteryState:
+    def __init__(self, expected_agencies):
+        self._expected_agencies = expected_agencies
+        self._agencies_finish = 0
+    
+    def agency_finished(self):
+        self._agencies_finish += 1
+        if self._agencies_finish == self._expected_agencies:
+            logging.info("action: sorteo | result: success")
+
+    def winners_ready(self):
+        return self._agencies_finish >= self._expected_agencies
+
 class Server:
-    def __init__(self, port, listen_backlog):
+    def __init__(self, port, listen_backlog, expected_agencies):
         # Initialize server socket
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._running = True
         self._clients = set()
+        self._lottery_state = LotteryState(expected_agencies)
 
     def shutdown(self):
         self._running = False
@@ -55,7 +69,7 @@ class Server:
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
-        client.handle_connection()
+        client.handle_connection(self._lottery_state)
         self._clients.discard(client)
 
     def __accept_new_connection(self):

@@ -6,6 +6,7 @@ services:
     entrypoint: python3 /main.py
     environment:
       - PYTHONUNBUFFERED=1
+      - EXPECTED_AGENCIES=5
     volumes:
       - ./server/config.ini:/config.ini
     networks:
@@ -18,6 +19,7 @@ services:
     environment:
       - CLI_ID=1
       - CSV_FILEPATH=/.data/agency-1.csv
+      - CLI_QUERY_SLEEPMILLIS=500
     volumes:
       - ./client/config.yaml:/config.yaml
       - ./.data/agency-1.csv:/.data/agency-1.csv
