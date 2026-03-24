@@ -12,7 +12,7 @@ class Client:
             bets = self._proto.receive_n_bets(amount)
             store_bets(bets)
             
-            logging.info(f"apuesta_recibida | result: success | cantidad: {amount}")
+            logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount}")
 
             self._proto.send_ack(ACK_OK)
 
