@@ -93,7 +93,7 @@ func (c *Client) getWinners() ([]string, error) {
 			return winners, nil
 		}
 
-		time.Sleep(c.config.QuerySleepMillis * time.Millisecond)
+		time.Sleep(time.Duration(c.config.QuerySleepMillis) * time.Millisecond)
 	}
 }
 

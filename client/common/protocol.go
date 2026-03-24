@@ -253,7 +253,7 @@ func (p *Protocol) QueryWinners(agencyID int) (ready bool, winners []string, err
 	buf := new(bytes.Buffer)
 
 	// Type (1 byte)
-	err := binary.Write(buf, binary.BigEndian, TypeQuery)
+	err = binary.Write(buf, binary.BigEndian, TypeQuery)
 	if err != nil {
 		return false, nil, fmt.Errorf("error serializing query message: %v", err)
 	}
@@ -280,7 +280,7 @@ func (p *Protocol) QueryWinners(agencyID int) (ready bool, winners []string, err
 	case WinnersNotReady:
 		return false, nil, nil
 	case WinnersReady:
-		winners, err := p.getWinners()
+		winners, err = p.getWinners()
 		if err != nil {
 			return false, nil, fmt.Errorf("error getting winners: %v", err)
 		}
