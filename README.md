@@ -233,3 +233,12 @@ Si la apuesta se almacena correctamente, el servidor envía un ACK `OK` al clien
 `action: apuesta_almacenada | result: success | dni: ${DOCUMENTO} | numero: ${NUMERO}`  
 
 Ante errores de datos (por ejemplo, formato incorrecto) el servidor responde con un ACK `BAD_REQUEST` y ante errores internos con un ACK `SERVER_ERROR`.
+
+#### Ejercicio N°6
+Para este ejercicio modifiqué el cliente para que lea las apuestas desde el archivo CSV y las envie en bathes, ademas extendí el protocolo y el servidor para procesar varos registros en una sola request.  
+
+En el cliente, cada contenedor `clientN` recibe su archivo `.data/agency-N.csv` montado como volumen y la ruta del archivo como variable de entorno en el contenedor `CSV_FILEPATH`. Implementé un iterador de CSV que lee el archivo linea por linea, parsea cada linea como una `Bet` y arma batches hasta `maxAmount` configurable en el archivo `config.yaml`. Para cada batch el protocolo ahora cambió para enviar primero un campo `amount` de 4 bytes indicando la cantidad de bets en el batch y luego concatena las bets al mimso para, posteriormente, enviarlo todo junto. Luego espera el ACK de 1 byte definido en el ejercicio anterior.  
+
+Del lado del servidor, ahora el protocolo primero espera recibir el campo `amount` de 4 bytes y luego se reciben exactamente `amount` apuestas. Si alguna apuesta produce un error de parseo se desecha el batch y se responde con un ACK de `BAD_REQUEST` al cliente.  
+
+Por ultimo, teniendo en cuenta que cada apuesta ocupa `66 bytes` (mas `4 bytes` del amount por batch), se eligió el valor de `maxAmount` de tal forma que el maximo del mensaje permanezca por debajo de los 8kB que exige el enunciado.
