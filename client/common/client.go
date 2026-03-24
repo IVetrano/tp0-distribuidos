@@ -16,6 +16,7 @@ type ClientConfig struct {
 	LoopPeriod    time.Duration
 	CsvFilePath   string
 	MaxBatchAmount int
+	QuerySleepMillis int
 }
 
 // Client Entity that encapsulates how
@@ -32,7 +33,50 @@ func NewClient(config ClientConfig) *Client {
 	return client
 }
 
+func (c *Client) sendBets(signalChannel chan os.Signal, protocol *Protocol, csvIterator *CSVBetIterator) error {
+	for !csvIterator.Done() {
+		// Check if a SIGTERM signal has been received. If so, break the loop
+		select {
+        case <-signalChannel:
+            log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
+            break
+        default:
+        }
 
+		bets, err := csvIterator.NextBatch(c.config.MaxBatchAmount)
+		if err != nil {
+			log.Errorf("action: read_csv_batch | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			return err
+		}
+
+		if bets == nil {
+			break
+		}
+
+		err = protocol.SendBetBatch(bets)
+		if err != nil {
+			log.Errorf("action: send_bets | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			return 	err
+		}
+	}
+	return nil
+}
+
+func (c *Client) getWinners(protocol *Protocol) ([]string, error) {
+	for {
+		ready, winners, err := protocol.QueryWinners()
+		if err != nil {
+			log.Errorf("action: query_winners | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			return nil, err
+		}
+
+		if ready {
+			return winners, nil
+		}
+
+		time.Sleep(c.config.QuerySleepMillis * time.Millisecond)
+	}
+}
 
 func (c *Client) StartClientLoop(signalChannel chan os.Signal) {
 	// Create the connection the server in every loop iteration.
@@ -49,33 +93,11 @@ func (c *Client) StartClientLoop(signalChannel chan os.Signal) {
 		return
 	}
 	
-	// Send Bets
-	for !csvIterator.Done() {
-		// Check if a SIGTERM signal has been received. If so, break the loop
-		select {
-        case <-signalChannel:
-            log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
-            break
-        default:
-        }
-
-		bets, err := csvIterator.NextBatch(c.config.MaxBatchAmount)
-		if err != nil {
-			log.Errorf("action: read_csv_batch | result: fail | client_id: %v | error: %v", c.config.ID, err)
-			return
-		}
-
-		if bets == nil {
-			break
-		}
-
-		err = protocol.SendBetBatch(bets)
-		if err != nil {
-			log.Errorf("action: send_bets | result: fail | client_id: %v | error: %v", c.config.ID, err)
-			return
-		}
+	// Send bets
+	err = c.sendBets(signalChannel, protocol, csvIterator)
+	if err != nil {
+		return
 	}
-
 	log.Infof("action: send_bets | result: success")
 
 	// Close the CSV file
@@ -84,6 +106,21 @@ func (c *Client) StartClientLoop(signalChannel chan os.Signal) {
 		log.Errorf("action: close_csv_iterator | result: fail | client_id: %v | error: %v", c.config.ID, err)
 		return
 	}
+
+	// Send finish
+	err = protocol.SendFinish()
+	if err != nil {
+		log.Errorf("action: send_finish | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		return
+	}
+	log.Infof("action: send_finish | result: success")
+
+	// Get winners
+	winners, err := c.getWinners(protocol)
+	if err != nil {
+		return
+	}
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", len(winners))
 
 	// Close the connection
 	err = protocol.Close()

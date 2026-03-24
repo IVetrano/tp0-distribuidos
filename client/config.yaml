@@ -8,3 +8,5 @@ log:
   level: "INFO"
 batch:
   maxAmount: 120
+query:
+  sleepMillis: 500

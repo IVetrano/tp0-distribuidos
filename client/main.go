@@ -113,7 +113,7 @@ func main() {
 		LoopPeriod:    v.GetDuration("loop.period"),
 		CsvFilePath:   os.Getenv("CSV_FILEPATH"),
 		MaxBatchAmount: v.GetInt("batch.maxAmount"),
-
+		QuerySleepMillis: v.GetInt("query.sleepMillis"),
 	}
 
 	signalChannel := make(chan os.Signal, 1)
