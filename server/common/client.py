@@ -58,6 +58,7 @@ class Client:
                     break
 
         except ValueError as e:
+            logging.error(f"action: apuesta_recibida | result: fail | error: {e}")
             if self._last_msg_type in (protocol.TYPE_BET_BATCH, protocol.TYPE_FINISH):
                 try:
                     self._proto.send_ack(protocol.ACK_BAD_REQUEST)
