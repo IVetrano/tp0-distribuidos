@@ -8,13 +8,18 @@ class Client:
 
     def handle_connection(self):
         try:
-            amount = self._proto.receive_amount()
-            bets = self._proto.receive_n_bets(amount)
-            store_bets(bets)
-            
-            logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount}")
+            while True:
+                try:
+                    amount = self._proto.receive_amount()
+                except ProtocolError as e:
+                    # EOF, client closed connection
+                    break
+                
+                bets = self._proto.receive_n_bets(amount)
+                store_bets(bets)
+                logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount}")
 
-            self._proto.send_ack(ACK_OK)
+                self._proto.send_ack(ACK_OK)
 
         except ValueError as e:
             logging.error(f"action: apuesta_recibida | result: fail | cantidad: {amount}")
