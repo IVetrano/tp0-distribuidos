@@ -242,3 +242,39 @@ En el cliente, cada contenedor `clientN` recibe su archivo `.data/agency-N.csv` 
 Del lado del servidor, ahora el protocolo primero espera recibir el campo `amount` de 4 bytes y luego se reciben exactamente `amount` apuestas. Si alguna apuesta produce un error de parseo se desecha el batch y se responde con un ACK de `BAD_REQUEST` al cliente.  
 
 Por ultimo, teniendo en cuenta que cada apuesta ocupa `66 bytes` (mas `4 bytes` del amount por batch), se eligió el valor de `maxAmount` de tal forma que el maximo del mensaje permanezca por debajo de los 8kB que exige el enunciado.
+
+#### Ejercicio 7
+Para este ejercicio extendí el protocolo y el flujo cliente/servidor para poder notificar el fin de envio de apuestas y consultar los ganadores.  
+
+En el protocolo se agregó un byte mas al inicio de los request del cliente que simboliza el tipo del mensaje `type`. Este puede ser:  
+- `TYPE_BET_BATCH`: batch de apuestas como los del ejercicio 6
+- `TYPE_FINISH`: notificacion de que la agencia ya termino de enviar las bets
+- `TYPE_QUERY`: consulta de ganadores para una agencia  
+
+Los formatos de los mensajes quedaron asi:
+- Batch de apuestas:  
+`type (1 byte = 0)` + `amount (4 bytes)` + `bets (66 bytes cada una)`
+
+- Finish:  
+`type (1 byte = 1)`
+
+- Query de ganadores:  
+`type (1 byte = 2)` + `agency_id (2 bytes)`
+El servidor responde primero con un byte de estado:
+  - `WINNERS_NOT_READY = 0`: El sorteo todavia no finalizó
+  - `WINNERS_READY = 1`: El sorteo finalizó. Si el estado es `WINNERS_READY`, a continuación envía:
+    - `count (4 bytes)` + `DNIs de los ganadores (12 bytes cada uno)`  
+
+En el cliente el flujo queda:
+1) Lee el CSV y envía todas las apuestas en batches
+2) Al terminar le envia un mensaje de finalizacion al servidor
+3) Cierra esa conexión
+4) Luego hace un loop de polling de ganadores:
+    - Abre una conexión con el servidor
+    - Envia un mensaje `TYPE_QUERY` con su `agency_id`
+    - Lee el primer byte de respuesta:
+      - Si es `WINNERS_NOT_READY`, cierra la conexión, duerme una cantidad de milisegundos configurable como variable de entorno `CLI_QUERY_SLEEPMILLIS`
+      - Si es `WINNERS_READY`, lee la cantidad de ganadores y luego los DNIs, para luego cerrar la conexion y salir del loop
+5) Finalmente, loguea la cantidad de ganadores de esa agencia.  
+
+Del lado del servidor se espera la notificacion de finalización de la cantidad de agencias definidas en el compose como `EXPECTED_AGENCIES` para responderle a las agencias con `WINNERS_READY` y los ganadores de la agencia que consulta.
