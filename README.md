@@ -212,13 +212,13 @@ Para resolver el ejercicio se definió un protocolo binario para la comunicació
 El cliente construye una apuesta (`Bet`) leyendo las variables de entorno (`NOMBRE`, `APELLIDO`, `DOCUMENTO`, `NACIMIENTO` (en formato YYYY-MM-DD) y `NUMERO`). Esta apuesta se envia al servidor mediante un módulo de comunicación `Protocol` que abstrae del cliente la serializacion de la apuesta al formato del protocolo definido y de la conexión del servidor. Éste serializa la apuesta en binario con el siguiente formato, siempre en Big Endian:
 ```
 agency: 2 bytes (uint16)
-first_name: 20 bytes (string padded con '\0')
+first_name: 24 bytes (string padded con '\0')
 last_name: 20 bytes (string padded con '\0')
 document: 12 bytes (string padded con '\0')
 birthdate: 4 bytes (year como uint16, month y day como uint8)
 number: 4 bytes (uint32)
 ```
-Dando un tamaño total de `62 bytes`.  
+Dando un tamaño total de `66 bytes`.  
 `Protocol` se encarga de manejar short writes/reads con funciones que envian y reciben hasta completar `N` bytes. Luego de enviar la apuesta, espera un ACK de `1 byte` desde el servidor, que estan definidos por:
 ```
 0: OK
@@ -228,7 +228,7 @@ Dando un tamaño total de `62 bytes`.
 Si el ACK es exitoso, loguea:  
 `action: apuesta_enviada | result: success | dni: ${DOCUMENTO} | numero: ${NUMERO}`  
 
-Del lado del servidor, se encapsuló la des-serialización y la comunicación en una clase `Protocol` análoga a la del cliente, y se implementó una clase `Client` para gestionar a cada cliente. `Protocol` recibe exactamente el tamaño fijo de la apuesta (`62 bytes`), luego des-serializa los campos en el mismo orden y tamaño que el cliente. Con estos datos se construye un objeto `Bet` del lado del servidor y se persiste con la funcón provista `store_bets(...)`.  
+Del lado del servidor, se encapsuló la des-serialización y la comunicación en una clase `Protocol` análoga a la del cliente, y se implementó una clase `Client` para gestionar a cada cliente. `Protocol` recibe exactamente el tamaño fijo de la apuesta (`66 bytes`), luego des-serializa los campos en el mismo orden y tamaño que el cliente. Con estos datos se construye un objeto `Bet` del lado del servidor y se persiste con la funcón provista `store_bets(...)`.  
 Si la apuesta se almacena correctamente, el servidor envía un ACK `OK` al cliente y loguea:  
 `action: apuesta_almacenada | result: success | dni: ${DOCUMENTO} | numero: ${NUMERO}`  
 

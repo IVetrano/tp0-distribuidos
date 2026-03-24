@@ -2,7 +2,7 @@ import socket
 from .utils import Bet
 
 AGENCY_SIZE = 2
-FIRST_NAME_SIZE = 20
+FIRST_NAME_SIZE = 24
 LAST_NAME_SIZE = 20
 DOCUMENT_SIZE = 12
 BIRTH_DATE_SIZE = 4

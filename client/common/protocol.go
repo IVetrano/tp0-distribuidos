@@ -7,7 +7,7 @@ import (
 	"net"
 )
 
-const firstNameSize = 20
+const firstNameSize = 24
 const lastNameSize = 20
 const documentSize = 12
 const ackSize = 1
