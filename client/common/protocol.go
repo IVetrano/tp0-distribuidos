@@ -7,10 +7,24 @@ import (
 	"net"
 )
 
+const (
+	TypeBetBatch byte = 0
+	TypeFinish   byte = 1
+	TypeQuery    byte = 2
+)
+
+const (
+	WinnersNotReady byte = 0
+	WinnersReady    byte = 1
+)
+
 const firstNameSize = 24
 const lastNameSize = 20
 const documentSize = 12
+
 const ackSize = 1
+const queryResponseSize = 1
+const winnerCountSize = 4
 
 // ACK constants
 const (
@@ -55,7 +69,7 @@ func (p *Protocol) serializeBet(bet *Bet) ([]byte, error) {
 		return nil, fmt.Errorf("error serializing agency: %v", err)
 	}
 
-	// First Name (20 bytes)
+	// First Name (24 bytes)
 	firstNameBytes, err := p.getFixedString(bet.FirstName, firstNameSize)
 	if err != nil {
 		return nil, fmt.Errorf("error processing first name: %v", err)
@@ -169,8 +183,14 @@ func (p *Protocol) sendAndWaitAck(data []byte) error {
 func (p *Protocol) serializeBetBatch(bets []*Bet) ([]byte, error) {
 	buf := new(bytes.Buffer)
 
+	// Type (1 byte)
+	err := binary.Write(buf, binary.BigEndian, TypeBetBatch)
+	if err != nil {
+		return nil, fmt.Errorf("error serializing message type: %v", err)
+	}
+
 	// Amount (4 bytes)
-	err := binary.Write(buf, binary.BigEndian, uint32(len(bets)))
+	err = binary.Write(buf, binary.BigEndian, uint32(len(bets)))
 	if err != nil {
 		return nil, fmt.Errorf("error serializing bet count: %v", err)
 	}
@@ -195,6 +215,73 @@ func (p *Protocol) SendBetBatch(bets []*Bet) error {
 		return err
 	}
 	return p.sendAndWaitAck(serializedBatch)
+}
+
+func (p *Protocol) SendFinish() error {
+	buf := new(bytes.Buffer)
+	err := binary.Write(buf, binary.BigEndian, TypeFinish)
+	if err != nil {
+		return fmt.Errorf("error serializing finish message: %v", err)
+	}
+
+	return p.sendAndWaitAck(buf.Bytes())
+}
+
+func (p *Protocol) getWinners() ([]string, error) {
+    countBytes, err := p.receiveNBytes(winnerCountSize)
+    if err != nil {
+        return nil, fmt.Errorf("error receiving winner count: %v", err)
+    }
+
+    count := binary.BigEndian.Uint32(countBytes)
+    winners := make([]string, count)
+
+    for i := uint32(0); i < count; i++ {
+        winnerBytes, err := p.receiveNBytes(documentSize)
+        if err != nil {
+            return nil, fmt.Errorf("error receiving winner document: %v", err)
+        }
+
+		winner := string(bytes.TrimRight(winnerBytes, "\x00"))
+        winners[i] = winner
+    }
+
+    return winners, nil
+}
+
+func (p *Protocol) QueryWinners() (ready bool, winners []string, err error) {
+	buf := new(bytes.Buffer)
+
+	// Type (1 byte)
+	err := binary.Write(buf, binary.BigEndian, TypeQuery)
+	if err != nil {
+		return false, nil, fmt.Errorf("error serializing query message: %v", err)
+	}
+
+	// Send query
+	err = p.sendAll(buf.Bytes())
+	if err != nil {
+		return false, nil, fmt.Errorf("error sending query message: %v", err)
+	}
+
+	// Wait for response
+	response, err := p.receiveNBytes(queryResponseSize)
+	if err != nil {
+		return false, nil, fmt.Errorf("error receiving query response: %v", err)
+	}
+
+	switch response[0] {
+	case WinnersNotReady:
+		return false, nil, nil
+	case WinnersReady:
+		winners, err := p.getWinners()
+		if err != nil {
+			return false, nil, fmt.Errorf("error getting winners: %v", err)
+		}
+		return true, winners, nil
+	default:
+		return false, nil, fmt.Errorf("unknown query response value: %v", response[0])
+	}
 }
 
 func (p *Protocol) Close() error {
