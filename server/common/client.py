@@ -1,23 +1,23 @@
 from . import protocol
-from .utils import store_bets, load_bets, has_won
 import logging
 
 class Client:
-    def __init__(self, client_socket):
+    def __init__(self, client_socket, bets_repository):
         self._proto = protocol.Protocol(client_socket)
+        self._bets_repo = bets_repository
         self._last_msg_type = None
 
     def _get_agency_winners(self, agency_id):
         winners = []
-        for bet in load_bets():
-            if bet.agency == agency_id and has_won(bet):
+        for bet in self._bets_repo.load_bets():
+            if bet.agency == agency_id and self._bets_repo.has_won(bet):
                 winners.append(bet.document)
         return winners
 
     def _handle_bet_batch(self):
         amount = self._proto.receive_amount()
         bets = self._proto.receive_n_bets(amount)
-        store_bets(bets)
+        self._bets_repo.store_bets(bets)
         logging.info(f"action: apuesta_recibida | result: success | cantidad: {amount}")
 
         self._proto.send_ack(protocol.ACK_OK)
