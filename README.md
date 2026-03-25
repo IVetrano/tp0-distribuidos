@@ -191,5 +191,8 @@ Se implementó un script de bash `generar-compose.sh` que, como pide el ejercici
 - Ejemplo:  
 `./generar-compose.sh docker-compose-dev.yaml 5`
 
+- Despues se puede levantar con el makefile de la cátedra:  
+`make docker-compose-up`
+
 #### Ejercicio N°2
 Se resolvió el ejercicio mediante el uso de volúmenes en Docker Compose, montando los archivos de configuración del cliente y servidor (`config.ini` para el servidor y `config.yaml` para el cliente) dentro de sus respectivos contenedores. Esto permite modificar la configuración sin necesidad de reconstruir las imágenes. Luego se quitaron las variables de entorno para que no reemplacen lo establecido en los archivos de configuración.
