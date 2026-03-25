@@ -190,3 +190,6 @@ Se implementó un script de bash `generar-compose.sh` que, como pide el ejercici
 `./generar-compose.sh <nombre_salida> <cantidad_clientes>`
 - Ejemplo:  
 `./generar-compose.sh docker-compose-dev.yaml 5`
+
+- Despues se puede levantar con el makefile de la cátedra:  
+`make docker-compose-up`
