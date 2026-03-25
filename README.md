@@ -278,3 +278,18 @@ En el cliente el flujo queda:
 5) Finalmente, loguea la cantidad de ganadores de esa agencia.  
 
 Del lado del servidor se espera la notificacion de finalización de la cantidad de agencias definidas en el compose como `EXPECTED_AGENCIES` para responderle a las agencias con `WINNERS_READY` y los ganadores de la agencia que consulta.
+
+### Parte 3
+#### Ejercicio 8
+Para la resolución de este ejercicio se utilizó multithreading para modificar el servidor y que pueda procesar los mensajes en paralelo.  
+
+El hilo principal se mantiene aceptando conexiones nuevas y creando threads por cada conexion.  
+
+Para la sincronización se utilizaron 3 monitores:
+- `LotteryState`: encapsula el estado del sorteo (cantidad de agencias que ya enviaron `FINISH`). Internamente usa un `threading.Lock` en los metodos `agency_finished` y `winners_ready`, de modo que el contador de agencias que finalizaron se actualiza y se lee de forma atómica.
+
+- `BetsRepository`: envuelve las funciones proporcionadas por la cátedra `store_bets` y `load_bets`, que no son thread-safe. De la misma forma que el anterior, este objeto usa un `threading.Lock` para que el guardado y la carga de las apuestas sean atómicas. La función `has_won` se sigue usando sin lock porque solo lee campos inmutables de cada apuesta.
+
+- `SetMonitor`: es un wrapper sobre un `set` con un `threading.Lock` interno, es usado para llevar un registro de:
+  - Los clientes activos
+  - Los threads creados
